@@ -6,7 +6,7 @@ type BookRowProps = {
   onMemoChange: (id: number, memo: string) => void
   onDelete: (id: number) => void
 }
-
+/* BookRowコンポーネントの定義 */
 const BookRow = (props: BookRowProps) => {
   // データ群セット
   const { title, authors, memo } = props.book
