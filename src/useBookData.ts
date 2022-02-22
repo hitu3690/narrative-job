@@ -51,9 +51,8 @@ export const useBookData = (
    *  - この配列の中身が変更を検知した場合のみ、副作用を呼び出す。
    *  - つまり、isSearching, title, author, props.maxResultsの中で検知できるが、今回はisSearchingのみ検知させる
    */
-  const [isSearching, setIsSearching] = useState(false)
   useEffect(() => {
-    if (isSearching) {
+    if (title || author) {
       const url = buildSearchUrl(title, author, maxResults)
       fetch(url)
         /* リクエストURLを生成してAPIコールし、レスポンスを返す */
@@ -75,8 +74,8 @@ export const useBookData = (
           console.log(err)
         })
     }
-    setIsSearching(false)
-  }, [isSearching])
+  }, [title, author, maxResults])
+  return books
   /* 複数の型の値を配列で返却して呼び出し元でデストラクチャリング（分割代入）で受け取るには、上記のように as const を付ける */
-  return [books, setIsSearching] as const
+  // return [books, setIsSearching] as const
 }

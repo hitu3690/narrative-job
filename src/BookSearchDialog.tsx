@@ -15,21 +15,18 @@ const BookSearchDialog = (props: BookSearchDialogProps) => {
    */
   const titleRef = useRef<HTMLInputElement>(null)
   const authorRef = useRef<HTMLInputElement>(null)
+  const [title, setTitle] = useState('')
+  const [author, setAuthor] = useState('')
+
   /* 独自ステート変数を定義して、ステートbookを別ファイルに切り出す */
-  const [books, setIsSearching] = useBookData(
-    titleRef.current ? titleRef.current!.value : '',
-    authorRef.current ? authorRef.current!.value : '',
-    props.maxResults,
-  )
+  const books = useBookData(title, author, props.maxResults)
   const handleSearchClick = () => {
     if (!titleRef.current!.value && !authorRef.current!.value) {
       alert('条件を入力してください')
       return
     }
-    /**
-     * 検索実行ロジック
-     */
-    setIsSearching(true)
+    setTitle(titleRef.current!.value)
+    setAuthor(authorRef.current!.value)
   }
   const handleBookAdd = (book: BookDescription) => {
     props.onBookAdd(book)
