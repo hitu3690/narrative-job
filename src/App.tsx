@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Modal from 'react-modal'
 import './App.css'
 import { BookToRead } from './BookToRead'
 import BookRow from './BookRow'
 import BookSearchDialog from './BookSearchDialog'
+import { BookDescription } from './BookDescription'
 
 /**
  * ダイアログに必要な要素作成とスタイル設定
@@ -24,33 +25,25 @@ const customStyles = {
   },
 }
 
-const dummyBooks: BookToRead[] = [
-  {
-    id: 1,
-    title: 'はじめてのReact',
-    authors: 'ダミー',
-    memo: '',
-  },
-  {
-    id: 2,
-    title: 'React Hooks入門',
-    authors: 'ダミー',
-    memo: '',
-  },
-  {
-    id: 3,
-    title: '実践Reactアプリケーション開発',
-    authors: 'ダミー',
-    memo: '',
-  },
-]
+const APP_KEY = 'hooks-book'
 
 const App = () => {
   /**
    * useState関数の引数は、初期値を設定する
    * dummyBooksを初期状態とする
+   * useEffect1 -> 初期リロード時(第二引数が空配列)にローカルストレージのbooksを、ステート変数のbooksに格納
+   * useEffect2 -> booksの変更を検知したら、ローカルストレージにbooksを保存
    */
-  const [books, setBooks] = useState(dummyBooks)
+  const [books, setBooks] = useState([] as BookToRead[])
+  useEffect(() => {
+    const storedBooks = localStorage.getItem(APP_KEY)
+    if (storedBooks) {
+      setBooks(JSON.parse(storedBooks))
+    }
+  }, [])
+  useEffect(() => {
+    localStorage.setItem(APP_KEY, JSON.stringify(books))
+  }, [books])
   const bookRows = books.map((b) => {
     return (
       <BookRow
@@ -73,6 +66,12 @@ const App = () => {
       return b.id === id ? { ...b, memo: memo } : b
     })
     setBooks(newBooks)
+  }
+  const handleBookAdd = (book: BookDescription) => {
+    const newBook: BookToRead = { ...book, id: Date.now(), memo: '' }
+    const newBooks: BookToRead[] = [...books, newBook]
+    setBooks(newBooks)
+    setModalIsOpen(false)
   }
   const handleBookDelete = (id: number) => {
     /**
@@ -110,7 +109,7 @@ const App = () => {
         onRequestClose={handleModalClose}
         style={customStyles}
       >
-        <BookSearchDialog maxResults={20} onBookAdd={(b) => {}} />
+        <BookSearchDialog maxResults={20} onBookAdd={(b) => handleBookAdd(b)} />
       </Modal>
     </div>
   )
