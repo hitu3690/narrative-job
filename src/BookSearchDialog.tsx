@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { BookDescription } from './BookDescription'
 import BookSearchItem from './BookSearchItem'
 
@@ -16,6 +16,40 @@ const BookSearchDialog = (props: BookSearchDialogProps) => {
   const [books, setBooks] = useState([] as BookDescription[])
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
+  /**
+   * 検索ロジック
+   *  - isSearching -> 検索処理実行中であることを示すステート管理
+   * useEffectを使ってステート変数の副作用を実装
+   *  - useEffectの第二引数には、「副作用が依存するステート変数 or propsのプロパティ」の配列を渡す
+   *  - この配列の中身が変更を検知した場合のみ、副作用を呼び出す。
+   *  - つまり、isSearching, title, author, props.maxResultsの中で検知できるが、今回はisSearchingのみ検知させる
+   */
+  const [isSearching, setIsSearching] = useState(false)
+  useEffect(() => {
+    if (isSearching) {
+      const url = buildSearchUrl(title, author, props.maxResults)
+      fetch(url)
+        /* リクエストURLを生成してAPIコールし、レスポンスを返す */
+        .then((res) => {
+          console.log(url)
+          return res.json()
+        })
+        /* レスポンス結果を整形して、booksを抽出 */
+        .then((json) => {
+          console.log(json)
+          return extractBooks(json)
+        })
+        /* ステートの更新 */
+        .then((books) => {
+          console.log(books)
+          setBooks(books)
+        })
+        .catch((err) => {
+          console.log(err)
+        })
+    }
+    setIsSearching(false)
+  }, [isSearching])
   const handleTitleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value)
   }
@@ -26,8 +60,11 @@ const BookSearchDialog = (props: BookSearchDialogProps) => {
     if (!title && !author) {
       alert('入力してください')
       return
-    } else {
     }
+    /**
+     * 検索実行ロジック
+     */
+    setIsSearching(true)
   }
   const handleBookAdd = (book: BookDescription) => {
     props.onBookAdd(book)
@@ -64,6 +101,36 @@ const BookSearchDialog = (props: BookSearchDialogProps) => {
       <div className="search-results">{bookItems}</div>
     </div>
   )
+}
+/* リクエストするURLを整形 */
+function buildSearchUrl(
+  title: string,
+  author: string,
+  maxResults: number,
+): string {
+  let url = 'https://www.googleapis.com/books/v1/volumes?q='
+  const conditions: string[] = []
+  if (title) {
+    conditions.push(`intitle: ${title}`)
+  }
+  if (author) {
+    conditions.push(`inauthor: ${author}`)
+  }
+  return url + conditions.join('+') + `&maxResults=${maxResults}`
+}
+/* レスポンスされたJSONを整形 */
+function extractBooks(json: any): BookDescription[] {
+  const items: any[] = json.items
+  return items.map((item: any) => {
+    const { volumeInfo } = item
+    return {
+      title: volumeInfo.title,
+      authors: volumeInfo.authors ? volumeInfo.authors.join(', ') : '',
+      thumbnail: volumeInfo.imageLinks
+        ? volumeInfo.imageLinks.smallThumbnail
+        : '',
+    }
+  })
 }
 
 export default BookSearchDialog
